@@ -8,6 +8,11 @@ pp_main()
 {
   unset -f pp_main
 
+  player_running()
+  {
+    [ $pp_player_pid ] && [ -d /proc/$pp_player_pid ]
+  }
+
   play_vlc_windows()
   {
     local file args=()
@@ -23,6 +28,7 @@ pp_main()
 
   play_sox_linux()
   {
+    player_running || (pulseaudio -k; pulseaudio --start)
     stop_player
     play -q -- "$@" >/dev/null 2>&1 &
     pp_player_pid=$!
@@ -30,7 +36,7 @@ pp_main()
 
   stop_player()
   {
-    [ $pp_player_pid ] && [ -d /proc/$pp_player_pid ] && kill -- $pp_player_pid
+    player_running && kill -- $pp_player_pid
   }
 
   local play_cmd
@@ -46,8 +52,6 @@ pp_main()
   done
 
   local dirs_with_albums="${valid_dirs[@]}"
-
-  # TODO Filter
 
   while :; do
 
