@@ -2,6 +2,9 @@
 # termux-setup-storage
 # pulseaudio --start
 
+# TODO &> instead of > 2>&1
+# TODO when paused, terminate player before playing another folder
+
 pp_player_pid=
 
 pp_main()
@@ -39,6 +42,18 @@ pp_main()
     player_running && kill -- $pp_player_pid
   }
 
+  pause_or_resume()
+  {
+    local signal
+
+    # Alternative that apparently didn't work:
+    # jobs -ps | grep -qw $pp_player_pid && signal=SIGCONT || signal=SIGSTOP
+
+    [ "$state" = playing ] && signal=SIGSTOP || signal=SIGCONT
+    kill -$signal -- $pp_player_pid
+    [ "$signal" = SIGSTOP ] && state=paused || state=playing
+  }
+
   local play_cmd
   if [[ $OSTYPE = msys ]]; then
     play_cmd=play_vlc_windows
@@ -70,7 +85,12 @@ pp_main()
 
     local option files=()
     read -r -n 2 -p 'Choose album: ' option
-    if ! [[ $option =~ ^[0-9][0-9]$ ]]; then
+    if [ -z $option ]; then
+      if player_running; then
+        printf " - pause/resume\n\n"
+        pause_or_resume
+      fi
+    elif ! [[ $option =~ ^[0-9][0-9]$ ]]; then
       printf " - invalid option\n\n"
     elif [ $option -eq 0 ]; then
       stop_player
@@ -88,6 +108,7 @@ pp_main()
       printf " - ok, let's play $album!\n\n"
       readarray -d '' audio_files < <(find "$album" \( -name '*.mp3' -or -name '*.flac' \) -print0 | sort -nz)
       $play_cmd "${audio_files[@]}"
+      state=playing
     fi
   done
 }
