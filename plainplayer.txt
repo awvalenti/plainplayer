@@ -1,0 +1,10 @@
+termux-setup-storage
+cd $HOME/storage
+pulseaudio --start
+pkg install sox
+play -q arquivo &
+pid=$!
+kill -SIGSTOP ou -SIGCONT
+
+Micro Usb Charge Hub Otg 4 Portas
+subject=termux-setup-storage
